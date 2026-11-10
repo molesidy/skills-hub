@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  AWTK 样式模板（1.7.1 / release 2210）
+
+  放置位置：design/<theme>/styles/default.xml
+  AWTK 只自动加载 default.xml；不要按控件拆成 button.xml/label.xml（不会加载）。
+  窗口专属皮肤才用 styles/<窗口名>.xml 或 window theme="xxx" → styles/xxx.xml。
+  若目录里同时有 default.bin 和 default.xml，.bin 优先，改 XML 后要先删 .bin。
+
+  文件根节点是控件类型（button、label、window...），一个文件可以有多个根节点。
+  style 的 name 被 UI XML 的 style="..." 引用；未写 style 时使用 default。
+
+  常用状态：
+    normal / pressed / over / focused / disable
+    normal_of_checked / pressed_of_checked / over_of_checked / disable_of_checked
+
+  state 直接写在 <style> 上的属性对所有状态生效，状态节点里的同名属性覆盖它。
+-->
+<window>
+  <style name="page">
+    <normal bg_color="#101418"/>
+  </style>
+</window>
+
+<!-- 文本：同一控件类型的所有命名样式放在同一个根节点下 -->
+<label>
+  <!-- 主标题 -->
+  <style name="title">
+    <normal text_color="#E6EDF3" font_size="24" text_align_h="left" text_align_v="middle"/>
+  </style>
+  <!-- 次级文字 -->
+  <style name="caption">
+    <normal text_color="#8B98A5" font_size="14" text_align_h="left" text_align_v="middle"/>
+  </style>
+</label>
+
+<!-- 主按钮：圆角纯色块。round_radius 只对纯色/边框生效，对 bg_image 无效。 -->
+<button>
+  <style name="primary">
+    <normal bg_color="#338FFF" text_color="#FFFFFF" round_radius="6" font_size="18"/>
+    <pressed bg_color="#2A74D6" text_color="#FFFFFF"/>
+    <over bg_color="#4A9BFF" text_color="#FFFFFF"/>
+    <disable bg_color="#3A3F46" text_color="#7A828C"/>
+  </style>
+</button>
+
+<!-- 次级按钮：描边、透明底。border_width 需要 vgcanvas 支持。 -->
+<button>
+  <style name="secondary">
+    <normal bg_color="#1A2028" border_color="#338FFF" border_width="1"
+            text_color="#338FFF" round_radius="6" font_size="18"/>
+    <pressed bg_color="#243040" border_color="#2A74D6" text_color="#2A74D6"/>
+    <disable bg_color="#1A1D21" border_color="#3A3F46" text_color="#5A626C"/>
+  </style>
+</button>
+
+<!-- 卡片：用 9 宫格切图做背景时，不要再用 round_radius。 -->
+<view>
+  <style name="card">
+    <normal bg_color="#1A2028" round_radius="8"/>
+  </style>
+</view>
+
+<!-- 复选框：图标在左，文字在右。 -->
+<check_button>
+  <style name="option">
+    <normal text_color="#E6EDF3" font_size="16" icon_at="left" spacer="8"/>
+    <normal_of_checked text_color="#338FFF"/>
+    <pressed_of_checked text_color="#2A74D6"/>
+  </style>
+</check_button>

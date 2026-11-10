@@ -1,0 +1,90 @@
+{
+  "_comment": "design_spec.json - 设计规格单一事实来源。坐标全部是 LCD 像素（已换算）。用 scripts/spec_to_ui.py 生成 XML。",
+  "project": {
+    "name": "demo",
+    "lcd": { "w": 800, "h": 480 },
+    "theme": "default",
+    "dpr": 1,
+    "awtk_root": "D:/SoftwareHub/AWStudio/AWTK/SDK/awtk"
+  },
+  "design": {
+    "file": "mockup.png",
+    "width": 1600,
+    "height": 960,
+    "origin": [0, 0],
+    "scale": 2.0
+  },
+  "colors": {
+    "bg": "#101418",
+    "primary": "#338FFF",
+    "text": "#E6EDF3",
+    "muted": "#8B98A5"
+  },
+  "fonts": {
+    "default": { "name": "default", "size": 18 },
+    "title": { "name": "default", "size": 24 }
+  },
+  "screens": [
+    {
+      "name": "main",
+      "type": "window",
+      "file": "main.xml",
+      "x": 0,
+      "y": 0,
+      "w": 800,
+      "h": 480,
+      "style": "page",
+      "children": [
+        {
+          "name": "bg",
+          "type": "image",
+          "x": 0,
+          "y": 0,
+          "w": "100%",
+          "h": "100%",
+          "attrs": { "image": "bg_main", "draw_type": "fill" }
+        },
+        {
+          "name": "title",
+          "type": "label",
+          "x": 24,
+          "y": 16,
+          "w": 300,
+          "h": 32,
+          "text": "Vehicle Status",
+          "style": "title",
+          "source": { "design_rect": [48, 32, 600, 64] }
+        },
+        {
+          "name": "actions",
+          "type": "view",
+          "x": 24,
+          "y": 416,
+          "w": 752,
+          "h": 48,
+          "children_layout": "default(r=1,c=2,s=8,m=0)",
+          "children": [
+            {
+              "name": "cancel",
+              "type": "button",
+              "text": "Cancel",
+              "style": "secondary",
+              "layout": "0,0,100%,100%"
+            },
+            {
+              "name": "ok",
+              "type": "button",
+              "text": "OK",
+              "style": "primary",
+              "layout": "0,0,100%,100%"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "assets": {
+    "root": "design/default/images",
+    "files": ["x1/bg_main.png"]
+  }
+}

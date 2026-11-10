@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  AWTK UI 模板（1.7.1 / release 2210）
+
+  使用前必须修改：
+    1. name：全局唯一，建议与文件名一致。
+    2. w / h：默认 800x480，改成工程 LCD 尺寸。
+    3. image="..."：换成 design/<theme>/images 下真实存在的资源名（不带路径/扩展名）。
+    4. style="..."：换成 design/<theme>/styles/default.xml 中已定义的样式名，或删除（用内置默认样式）。
+
+  规则速查：
+    - x="c" / "center"、y="m" / "middle" 表示居中；x="r:20" 右对齐再左移 20。
+    - w="100%"、h="100%" 取父控件尺寸；w="-20" 表示父宽减 20。
+    - column/row 自己不会排布子控件，必须写 children_layout。
+    - 资源名不要带 x1/ 路径或 .png 扩展名。
+-->
+<window name="main" x="0" y="0" w="800" h="480" style="default">
+  <!-- 背景：整屏铺满。没有背景图时删除本行，用 style 的 bg_color。 -->
+  <image name="bg" x="0" y="0" w="100%" h="100%" image="bg_main" draw_type="fill"/>
+
+  <!-- 内容区：vbox，四周 16px 边距，子控件间距 8px。 -->
+  <view name="content" x="0" y="0" w="100%" h="100%"
+        children_layout="default(r=0,c=1,s=8,m=16)">
+    <label name="title" x="0" y="0" w="100%" h="36" text="Title"
+           style.normal.text_color="#E6EDF3" style.normal.font_size="24"
+           style.normal.text_align_h="left"/>
+
+    <!-- 两列网格：2 行 2 列，间距 8，外边距 0。 -->
+    <view name="grid" x="0" y="0" w="100%" h="300"
+          children_layout="default(r=2,c=2,s=8,m=0)">
+      <button name="btn_left" x="0" y="0" w="100%" h="100%" text="Left"/>
+      <button name="btn_right" x="0" y="0" w="100%" h="100%" text="Right"/>
+      <label name="hint" x="0" y="0" w="100%" h="100%" text="Hint"/>
+      <label name="value" x="0" y="0" w="100%" h="100%" text="--"/>
+    </view>
+
+    <!-- 底部按钮行。 -->
+    <view name="actions" x="0" y="0" w="100%" h="48"
+          children_layout="default(r=1,c=2,s=8,m=0)">
+      <button name="cancel" x="0" y="0" w="100%" h="100%" text="Cancel"/>
+      <button name="ok" x="0" y="0" w="100%" h="100%" text="OK"/>
+    </view>
+  </view>
+</window>

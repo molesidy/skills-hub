@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  2W 仪表（cluster）骨架模板 —— AWTK 1.7.1 / release 2210
+
+  这是一个可直接预览的“占位骨架”，不是最终视觉稿。使用步骤：
+    1. 把所有 ASSET_* / gauge_* / digit_* / icon_* / car_* 资源名换成
+       design/<theme>/images 下的真实切图名（不带路径和扩展名）。
+    2. 按效果图修改 x/y/w/h；本文件默认 1024x600。
+    3. 指针图片必须是“针尖朝上”的 PNG/SVG；旋转中心由 anchor_x/anchor_y 决定，
+       默认 50%/50%，即图片中心。若你的针轴不在图片中心，改成百分比或 px。
+    4. gauge_pointer 的 value 是角度（度），不是车速/功率物理值：
+       0=12 点方向，顺时针为正。例如 -135 ~ +135 覆盖 270 度。
+    5. image_value 的 image 是前缀，format="%03d" 需要 digit_speed_0..9。
+    6. 预览（在 skill 根目录执行）：
+       python scripts/preview_ui.py -project <工程> -ui design/default/ui/cluster.xml
+              -lcd 1024x600 -screenshot out/cluster.png
+       （实际命令行使用双连字符参数，这里为符合 XML 注释规则写成单连字符。）
+-->
+<window name="cluster" x="0" y="0" w="1024" h="600" style="cluster_page">
+  <!-- 全屏背景 -->
+  <image name="bg" x="0" y="0" w="100%" h="100%" image="cluster_bg" draw_type="fill"/>
+
+  <!-- 左：车速表 -->
+  <gauge name="speed_gauge" x="70" y="300" w="300" h="300" image="gauge_speed_bg">
+    <gauge_pointer name="speed_pointer" x="c" y="m" w="24" h="160"
+                   image="gauge_speed_pointer" value="-135"
+                   anchor_x="50%" anchor_y="50%"/>
+  </gauge>
+
+  <!-- 右：功率/转速表 -->
+  <gauge name="power_gauge" x="654" y="300" w="300" h="300" image="gauge_power_bg">
+    <gauge_pointer name="power_pointer" x="c" y="m" w="20" h="150"
+                   image="gauge_power_pointer" value="-135"
+                   anchor_x="50%" anchor_y="50%"/>
+  </gauge>
+
+  <!-- 中间：车辆俯视图 -->
+  <image name="car" x="c" y="300" w="220" h="300" image="car_top" draw_type="scale"/>
+
+  <!-- 车速数字：000..999。image 前缀 + 每个数字一张图。 -->
+  <image_value name="speed_digits" x="380" y="330" w="264" h="90"
+               image="digit_speed_" format="%03d" value="0"/>
+
+  <!-- 档位 / 驾驶模式：直接换文本或图 -->
+  <label name="gear" x="470" y="250" w="84" h="48" text="D"
+         style.normal.text_color="#E6EDF3" style.normal.font_size="40"
+         style.normal.text_align_h="center"/>
+  <label name="mode" x="440" y="430" w="144" h="28" text="NORMAL"
+         style.normal.text_color="#8B98A5" style.normal.font_size="16"
+         style.normal.text_align_h="center"/>
+
+  <!-- 电量圆环：进度 + 百分比文本。走 vgcanvas，不支持时自动降级。 -->
+  <progress_circle name="soc" x="c" y="116" w="120" h="120"
+                   value="76" max="100" format="%d%%"
+                   start_angle="90" line_width="6" show_text="true"
+                   style.normal.fg_color="#338FFF"
+                   style.normal.text_color="#E6EDF3"
+                   style.normal.font_size="18"/>
+
+  <!-- 续航 / 里程：多位数用 image_value，单位用 label。 -->
+  <image_value name="range_digits" x="360" y="500" w="176" h="44"
+               image="digit_range_" format="%03d" value="0"/>
+  <label name="range_unit" x="540" y="500" w="60" h="44" text="km"
+         style.normal.text_color="#8B98A5" style.normal.font_size="18"
+         style.normal.text_align_h="left" style.normal.text_align_v="middle"/>
+
+  <image_value name="odo_digits" x="620" y="500" w="220" h="36"
+               image="digit_odo_" format="%05d" value="0"/>
+  <label name="odo_unit" x="844" y="500" w="44" h="36" text="km"
+         style.normal.text_color="#8B98A5" style.normal.font_size="16"
+         style.normal.text_align_h="left" style.normal.text_align_v="middle"/>
+
+  <!-- 顶部状态栏：一行 5 个图标位。 -->
+  <view name="status_bar" x="0" y="0" w="100%" h="48"
+        children_layout="default(r=1,c=5,s=12,m=16)">
+    <image name="icon_left" x="0" y="0" w="100%" h="100%" image="icon_turn_left" draw_type="center"/>
+    <image name="icon_warning" x="0" y="0" w="100%" h="100%" image="icon_warning" draw_type="center"/>
+    <label name="clock" x="0" y="0" w="100%" h="100%" text="12:00"
+           style.normal.text_color="#E6EDF3" style.normal.font_size="18"
+           style.normal.text_align_h="center" style.normal.text_align_v="middle"/>
+    <image name="icon_battery" x="0" y="0" w="100%" h="100%" image="icon_battery" draw_type="center"/>
+    <image name="icon_right" x="0" y="0" w="100%" h="100%" image="icon_turn_right" draw_type="center"/>
+  </view>
+
+  <!-- 底部提示条：故障/提示文字，默认隐藏。 -->
+  <view name="warning_bar" x="c" y="bottom:64" w="720" h="44" visible="false"
+        style.normal.bg_color="#3A1F1F" style.normal.round_radius="6">
+    <label name="warning_text" x="0" y="0" w="100%" h="100%" text=""
+           style.normal.text_color="#FF6B6B" style.normal.font_size="16"
+           style.normal.text_align_h="center" style.normal.text_align_v="middle"/>
+  </view>
+</window>
