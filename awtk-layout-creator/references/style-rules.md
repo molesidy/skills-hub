@@ -193,13 +193,28 @@ AWTK 1.7.1 的样式加载规则（源码 `assets_manager.c` / `window_base.c` /
 
 ### 6.2 draw_type 选择
 
+**默认规则：所有图片控件显式写 `draw_type="default"`。** 只有下表“特殊用途”才允许换值，并必须在 `design_spec.json` / 交付说明里写明原因（约束 1）。
+
 | 场景 | draw_type |
 | --- | --- |
-| 按钮/卡片背景（可拉伸） | `patch9`（九宫格）或 `patch3_x`/`patch3_y` |
-| 小图标固定大小 | `default` 或 `center` |
-| 需要随控件缩放 | `scale_auto`（保持比例）或 `scale`（拉伸） |
-| 只缩小不放大 | `scale_down` |
-| 纹理平铺 | `repeat` / `repeat_x` / `repeat_y` / `fill` |
+| 默认：按原图大小绘制，不缩放 | `default` |
+| 特殊：需要随控件缩放 | `scale_auto`（保持比例）或 `scale`（拉伸） |
+| 特殊：按钮/卡片背景（可拉伸） | `patch9`（九宫格）或 `patch3_x`/`patch3_y` |
+| 特殊：只缩小不放大 | `scale_down` |
+| 特殊：只居中不缩放 | `center` |
+| 特殊：纹理平铺 | `repeat` / `repeat_x` / `repeat_y` / `fill` |
+
+```xml
+<!-- 默认 -->
+<image name="icon_fuel" x="20" y="20" w="32" h="32" image="icon_fuel" draw_type="default"/>
+
+<!-- 特殊：整屏背景需要拉伸，显式声明 -->
+<image name="bg" x="0" y="0" w="1024" h="600" image="bg_main" draw_type="scale"/>
+```
+
+- `spec_to_ui.py` 会给图片类控件自动补 `draw_type="default"`；已经写出的特殊值保持原值。
+- `validate_ui.py --strict-constraints` 会把“图片控件缺 `draw_type`”判为 error。
+- `gauge`、`gauge_pointer`、`progress_circle`、`button`、`label` 等不以 `draw_type` 为主的控件不受此限。
 
 > 九宫格图必须在文件名或资源中保留可拉伸边界；切图时四角不要有内容。`patch9` 需要图片本身带有 9 宫格信息（AWTK 按图片尺寸均分，具体以 `image_draw_type.md` 为准）。
 

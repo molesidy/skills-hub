@@ -122,7 +122,7 @@ design/default/images/svg/speed_needle.svg
 XML 引用：
 
 ```xml
-<image image="btn_ok_n"/>
+<image image="btn_ok_n" draw_type="default"/>
 <gauge_pointer image="speed_needle"/>
 ```
 
@@ -229,9 +229,11 @@ python <SKILL_DIR>/scripts/preview_ui.py --project my_ui \
 1. 在 `design/<theme>/ui/` 下新建 `<name>.xml`。
 2. 根标签用 `window`/`dialog` 等。
 3. 在代码中 `window_open("<name>")` 打开；如果是 `entry`，改 `project.json` 的 `entry`。
-4. 新增样式追加到 `styles/default.xml`（或明确的窗口专属 `<窗口名>.xml`）。
-5. 新增切图放到 `images/x1/` 等目录。
-6. 重新 `update_res.py all`（编译前）。
+4. 白天/黑夜双模式：同一界面生成 `<name>_day.xml` 与 `<name>_night.xml` 两个文件，不要只写一个共用 XML。
+5. 新增样式追加到 `styles/default.xml`（或明确的窗口专属 `<窗口名>.xml`）。
+6. 新增切图放到 `images/x1/` 等目录，**文件名保持原始切图名，不得改名**。
+7. 有缺失/错误切图或坐标待确认时，在 XML 旁写同名 `.md`。
+8. 重新 `update_res.py all`（编译前）。
 
 ## 8. 工程类型
 
@@ -247,16 +249,20 @@ python <SKILL_DIR>/scripts/preview_ui.py --project my_ui \
 
 - 工程路径尽量不含中文/空格；`preview_ui.exe` 对含空格路径需要正确引号。
 - XML 用 UTF-8（无 BOM）；Windows 记事本保存的带 BOM UTF-8 也可被 AWTK 读取，但建议统一无 BOM。
-- 资源名区分大小写；Windows 文件系统不区分，但打包/上板后可能区分，统一小写最稳。
+- 资源名区分大小写；Windows 文件系统不区分，但打包/上板后可能区分。**不要为了“稳”去改切图文件名**；按原始文件名引用，风险写入 `.md`。
 - `project.json` 的 `awtkRoot` 可用 `${AWTK_SDK_PATH}`；路径分隔符用 `/` 或 `\\`。
 
 ## 10. 交付物放在哪
 
 | 交付物 | 位置 |
 | --- | --- |
-| UI XML | `design/<theme>/ui/*.xml` |
+| UI XML | `design/<theme>/ui/*.xml`（双模式含 `_day.xml` / `_night.xml`） |
+| 标注说明 | 与 XML 同名的 `.md`（有缺失/待确认项时必交） |
 | 样式 XML | `design/<theme>/styles/default.xml`（窗口专属样式才是 `<窗口名>.xml`） |
 | 切图 | `design/<theme>/images/x1/...` |
 | 字体 | `design/<theme>/fonts/` |
 | 设计规格 | 工程根或 `design/` 下 `design_spec.json`（不参与打包） |
 | 预览截图/对比图 | `out/` 或临时目录（不要放 `design/`） |
+| 上下文胶囊/摘要 | `out/context/capsule.md`、`out/context/*.md`（不参与打包，可随时删除） |
+
+`design/` 只放会被资源管理器加载的文件；`design_spec.json`、`out/`、`out/context/` 都是工作产物，不要塞进 `design/<theme>/`，否则可能被 `update_res.py` 打进资源包。

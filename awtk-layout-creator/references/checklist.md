@@ -2,6 +2,16 @@
 
 生成前、生成后、预览后各过一遍。任何一项不通过，都不要说“已完成”。
 
+## 0. 硬性约束（每次必查）
+
+- [ ] 图片类控件都有 `draw_type`，默认值为 `default`；非默认值都有明确理由。
+- [ ] 没有切图被改名；XML 的 `image` 等于原始文件名主干。
+- [ ] 缺失切图没有出现在 XML 中，且已写入同名 `.md` 的“未放置”。
+- [ ] 错误切图/错误坐标仍在 XML 中，且已写入同名 `.md` 的“已放置但需确认”。
+- [ ] 坐标/尺寸是计划书原值，没有任何人为微调。
+- [ ] 白天/黑夜双模式界面输出两个 XML（`_day.xml` / `_night.xml`）。
+- [ ] `<view>` 分组只用于同模块控件，分组前后绝对坐标一致。
+
 ## 1. 输入阶段
 
 - [ ] 已确认用户身份/偏好：项目类型（2W/中控/HMI/通用）、品牌色、字体、是否深色主题。
@@ -12,6 +22,15 @@
 - [ ] 已确认 AWTK 版本；1.7.1 release 2210 **没有** `flex(...)` self_layouter。
 - [ ] 已确认工程是可预览的 AWTK 工程：`project.json` + `design/<theme>/{ui,styles,images,fonts}`。
 
+## 1.5 上下文与 Token
+
+- [ ] 大输入（xlsx >100 行/>20 列、XML >300 控件、切图 >150 文件、日志 >200 行、spec >100 控件）已先跑 `context_digest.py`，没有整份倾倒。
+- [ ] 处理时逐屏进行：用 `--screen <name>` 只取当前屏幕，没有一次性展开全部屏幕。
+- [ ] 摘要只做计数/分组/采样；`name/x/y/w/h/image/style/text` 未被改写。
+- [ ] 只读了当前步骤需要的一份 reference；`AWTK开发实践.pdf` 未整份读入。
+- [ ] 大项目已维护 `out/context/capsule.md`（屏幕状态、已确认决策、待确认项、下一步）。
+- [ ] `out/`、`out/context/` 未被放进 `design/`。
+
 ## 2. 设计规格（design_spec.json）
 
 - [ ] 所有坐标已换算成 **LCD 像素**，不是设计稿像素。
@@ -19,19 +38,24 @@
 - [ ] 控件树层级与效果图分组一致；同级按 `y` 再 `x` 排序。
 - [ ] 颜色已归一化（`#RRGGBB` 或 `#RRGGBBAA`，alpha 在后）。
 - [ ] 字体名在 `design/<theme>/fonts` 中存在，或明确使用 `default`。
+- [ ] 双模式界面已在 screen 写 `modes`，按模式差异写 `by_mode`。
+- [ ] 缺失切图节点已标 `missing: true`；错误切图/坐标已标 `review_kind` + `review_note`。
 - [ ] 缺失输入已记录（坐标估算/缺图/缺字体），并在交付说明中写明。
 
 ## 3. 资源与命名
 
 - [ ] 图片放在 `design/<theme>/images/x1`（或 `x2`/`svg` 等密度目录）。
 - [ ] XML 中只写资源名，不写路径、不写扩展名。
-- [ ] 资源名与文件名一致；大小写一致。
+- [ ] **资源名与原始切图文件名完全一致；没有重命名、改大小写或替换字符。**
+- [ ] 缺失切图没有被占位图/纯色块/抠图顶替；相关控件已从 XML 省略。
 - [ ] `image_value` / `image_animation` 的前缀资源齐全（如 `digit_0..9`、`digit_dot`）。
 - [ ] 9 宫格图已设置 `patch9` / `patch3_x` 等正确的 `bg_image_draw_type`。
 - [ ] 图片尺寸足够，缩放后不糊；需要 SVG 的优先用 SVG。
 
 ## 4. 布局
 
+- [ ] 所有坐标/尺寸是计划书原值，没有“为了对齐”手工加减 1～2px。
+- [ ] `<view>` 分组仅用于同模块控件；容器矩形优先采用计划书给定值（未给定时才用最小外接矩形，且必须覆盖所有子控件），子控件坐标换算正确，绝对位置不变。
 - [ ] 根 `<window>` 有明确的 `w`/`h`（或 100% + LCD 尺寸可推导）。
 - [ ] `x/y` 使用 `c/m/r/b` 或数字/百分比；没有使用 `top:` / `left:`。
 - [ ] 负值只用于 `w/h` 表示“父尺寸减 N”；`x/y` 的负值是真实负坐标。
@@ -66,13 +90,15 @@
 ## 7. 校验
 
 ```bash
-python scripts/validate_ui.py design/default/ui/main.xml --project <工程> --lcd 800x480
+python scripts/validate_ui.py design/default/ui/main_day.xml --project <工程> --lcd 800x480 --strict-constraints
 ```
 
 - [ ] 0 errors。
+- [ ] `--strict-constraints` 通过（图片控件 `draw_type` 等约束问题为 0）。
 - [ ] warnings 已逐条阅读；`--strict` 时 warnings 也视为失败。
-- [ ] 图片资源检查通过（或明确使用占位图）。
+- [ ] 图片资源检查通过；缺失切图已从 XML 省略并在 `.md` 记录（不得用占位图顶替）。
 - [ ] 样式引用检查通过。
+- [ ] 双模式两个 XML 都校验过。
 
 ## 8. 预览
 
@@ -107,8 +133,10 @@ python scripts/compare_images.py design/mockup.png out/preview.png \
 ## 10. 交付
 
 - [ ] `design/<theme>/ui/*.xml` 与 `design/<theme>/styles/default.xml` 已写入正确位置。
+- [ ] 双模式界面已交付两个 XML。
+- [ ] 每个有缺失/待确认项的 XML 旁都有同名 `.md`。
 - [ ] `design_spec.json`、预览截图、比对图、`metrics.json` 一并交付。
-- [ ] 交付说明包含：LCD 尺寸、主题、字体、缺失资源、估算坐标、已知差异。
+- [ ] 交付说明包含：LCD 尺寸、主题、字体、未改名切图的原始文件名、缺失资源、错误切图/坐标待确认项、已知差异。
 - [ ] 没有把临时文件写进 `design/`（会被打包）。
 - [ ] 已告诉用户如何自己预览（命令 + 与构建匹配的 `res_root`：旧构建 `res`/staging，新构建 `design`）。
 

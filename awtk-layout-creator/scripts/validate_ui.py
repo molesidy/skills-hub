@@ -9,6 +9,7 @@ layout syntax, and obvious out-of-parent placement.
 import argparse
 import json
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -236,6 +237,10 @@ def check_images(report, elem, label, assets):
         if "/" in value or "\\" in value or "." in value:
             report.warn("%s: %s=%r should be a bare resource name "
                         "(no path or extension)" % (label, attr, value))
+        if re.search(r"[^A-Za-z0-9_]", value):
+            report.warn("%s: resource %r contains characters AWTK may not resolve "
+                        "reliably; keep the original filename (constraint 2) and "
+                        "record it in the sibling .md" % (label, value))
         if tag in common.PREFIX_IMAGE_WIDGETS and attr == "image":
             if not any(name.startswith(value) for name in assets):
                 report.error("%s: no image asset starts with %r" % (label, value))
@@ -243,6 +248,30 @@ def check_images(report, elem, label, assets):
             if value not in assets:
                 report.error("%s: image asset %r not found under design/<theme>/images"
                              % (label, value))
+
+
+def check_draw_type(report, elem, label, strict_constraints):
+    """Constraint 1: image widgets spell out draw_type ("default" by default)."""
+    if elem.tag not in common.IMAGE_DRAW_TYPE_WIDGETS:
+        return
+    image = elem.get("image")
+    if not image:
+        return
+    draw_type = elem.get("draw_type")
+    if draw_type is None:
+        message = ("%s: image widget is missing draw_type; constraint 1 requires "
+                   'draw_type="default" unless it is a documented special case'
+                   % label)
+        if strict_constraints:
+            report.error(message)
+        else:
+            report.warn(message)
+        return
+    if str(draw_type) not in DRAW_TYPES:
+        report.error("%s: unsupported draw_type=%r" % (label, draw_type))
+    if str(draw_type) != "default" and strict_constraints:
+        report.warn("%s: draw_type=%r is a special case; make sure it is "
+                    "documented in the delivery notes" % (label, draw_type))
 
 
 def resolve_style_props(style_index, tag, style_name):
@@ -322,6 +351,7 @@ def walk(elem, parent, parent_w, parent_h, report, ctx):
     check_self_layout(report, elem, label)
     check_inline_style(report, elem, label)
     check_images(report, elem, label, ctx["assets"])
+    check_draw_type(report, elem, label, ctx["strict_constraints"])
     check_styles(report, elem, label, ctx["styles"])
 
     if elem.tag in ("column", "row"):
@@ -346,7 +376,8 @@ def walk(elem, parent, parent_w, parent_h, report, ctx):
         walk(child, elem, w, h, report, ctx)
 
 
-def validate(ui_path, project, theme, lcd, strict=False, check_assets=True):
+def validate(ui_path, project, theme, lcd, strict=False, check_assets=True,
+             strict_constraints=False):
     report = Report()
     ui_path = Path(ui_path)
     if not ui_path.is_file():
@@ -411,7 +442,8 @@ def validate(ui_path, project, theme, lcd, strict=False, check_assets=True):
     report.stats["widgets"] = 1 + len(list(common.iter_widgets(root)))
     report.stats["lcd"] = "%dx%d" % lcd
 
-    ctx = {"assets": assets, "styles": style_index, "root": root, "lcd": lcd}
+    ctx = {"assets": assets, "styles": style_index, "root": root, "lcd": lcd,
+           "strict_constraints": strict_constraints}
     walk(root, None, lcd[0], lcd[1], report, ctx)
     report.stats["errors"] = len(report.errors)
     report.stats["warnings"] = len(report.warnings)
@@ -426,6 +458,9 @@ def main(argv=None):
     parser.add_argument("--theme", help="theme name")
     parser.add_argument("--lcd", type=parse_lcd, help="LCD size, e.g. 800x480")
     parser.add_argument("--strict", action="store_true", help="treat warnings as errors")
+    parser.add_argument("--strict-constraints", action="store_true",
+                        help='enforce skill constraints (e.g. image widgets must '
+                             'write draw_type="default")')
     parser.add_argument("--json", action="store_true", help="print JSON only")
     parser.add_argument("--no-images", action="store_true", help="skip image checks")
     parser.add_argument("--no-styles", action="store_true", help="skip style checks")
@@ -434,7 +469,9 @@ def main(argv=None):
     project = infer_project(args.ui, args.project)
     theme = infer_theme(args.ui, project, args.theme)
     report = validate(args.ui, project, theme, args.lcd,
-                      strict=args.strict, check_assets=not (args.no_images and args.no_styles))
+                      strict=args.strict,
+                      check_assets=not (args.no_images and args.no_styles),
+                      strict_constraints=args.strict_constraints)
 
     if args.json:
         common.json_print({

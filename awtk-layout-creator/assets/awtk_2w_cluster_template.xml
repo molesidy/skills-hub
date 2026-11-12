@@ -39,7 +39,7 @@
 
   <!-- 车速数字：000..999。image 前缀 + 每个数字一张图。 -->
   <image_value name="speed_digits" x="380" y="330" w="264" h="90"
-               image="digit_speed_" format="%03d" value="0"/>
+               image="digit_speed_" format="%03d" value="0" draw_type="default"/>
 
   <!-- 档位 / 驾驶模式：直接换文本或图 -->
   <label name="gear" x="470" y="250" w="84" h="48" text="D"
@@ -59,13 +59,13 @@
 
   <!-- 续航 / 里程：多位数用 image_value，单位用 label。 -->
   <image_value name="range_digits" x="360" y="500" w="176" h="44"
-               image="digit_range_" format="%03d" value="0"/>
+               image="digit_range_" format="%03d" value="0" draw_type="default"/>
   <label name="range_unit" x="540" y="500" w="60" h="44" text="km"
          style.normal.text_color="#8B98A5" style.normal.font_size="18"
          style.normal.text_align_h="left" style.normal.text_align_v="middle"/>
 
   <image_value name="odo_digits" x="620" y="500" w="220" h="36"
-               image="digit_odo_" format="%05d" value="0"/>
+               image="digit_odo_" format="%05d" value="0" draw_type="default"/>
   <label name="odo_unit" x="844" y="500" w="44" h="36" text="km"
          style.normal.text_color="#8B98A5" style.normal.font_size="16"
          style.normal.text_align_h="left" style.normal.text_align_v="middle"/>

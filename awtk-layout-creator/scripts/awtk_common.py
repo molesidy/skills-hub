@@ -28,6 +28,13 @@ PREVIEW_WINDOW_TITLES = ("AWTK Simulator", "awtk_preview")
 
 IMAGE_ATTRS = ("image", "bg_image", "fg_image", "icon", "active_icon")
 PREFIX_IMAGE_WIDGETS = ("image_value", "image_animation")
+# Image widgets whose XML `image` attribute is drawn through `draw_type`.
+# The skill requires an explicit draw_type="default" unless the widget is a
+# documented special case (scale/patch9/repeat/...).
+IMAGE_DRAW_TYPE_WIDGETS = (
+    "image", "image_value", "image_animation", "gif", "gif_image",
+    "svg", "svg_image",
+)
 
 
 def setup_stdout():

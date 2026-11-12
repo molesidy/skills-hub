@@ -220,6 +220,48 @@ self_layout="default(x=center,y=10,w=50%,h=148)"
 
 > 不要为了“看起来高级”而嵌套多层 `view`。2～3 层通常足够；层级越深，布局和调试越难。
 
+## 5.1 同模块切图分组（`<view>`）
+
+当计划书或切图明确显示若干控件属于**同一个模块**（同一组温度数字、同一组指示灯、同一张卡片）时，可以用一个 `<view>` 容器把它们包起来。约束见 `references/constraints.md` 第 5 条。
+
+规则：
+
+1. 只在“同一模块”时分组；单个控件、跨模块控件不要硬塞进容器。
+2. 容器矩形优先采用计划书/示例给定的值（如用户示例的 `53,54,59,26`）；**不要**为了“最小”把给定容器缩小。
+   计划书没给容器时，才用组内最小外接矩形兜底：
+   - `view.x = min(child.x)`、`view.y = min(child.y)`；
+   - `view.w = max(child.x + child.w) - view.x`；
+   - `view.h = max(child.y + child.h) - view.y`。
+3. 子控件坐标换算为相对容器：
+   - `child.x = 原 child.x - view.x`；
+   - `child.y = 原 child.y - view.y`；
+   - `w/h` 不变。
+4. **分组前后绝对坐标必须完全一致**。这是坐标系换算，不是“微调坐标”；不允许借分组之名偏移控件。
+5. 容器默认不写 `draw_type`；容器内的图片控件仍然写 `draw_type="default"`（特殊控件除外）。
+6. 容器一般不用 `children_layout`，子控件继续用绝对坐标；只有确实需要统一排版时才用，并确保不会覆盖计划书坐标。
+7. z-order 仍然是 XML 顺序：容器整体的绘制顺序由它在父控件中的位置决定；容器内的顺序由内部子控件顺序决定。
+
+示例：
+
+```xml
+<view name="viewout_temp" x="53" y="54" w="59" h="26" visible="true">
+  <image name="temp_heng" x="0" y="1" w="12" h="19" draw_type="default" image="tem_n_dash"/>
+  <image name="temp_va1" x="12" y="1" w="12" h="19" draw_type="default" image="tem_n_2"/>
+  <image name="temp_va2" x="24" y="1" w="12" h="19" draw_type="default" image="tem_n_9"/>
+  <image name="temp_Unit" x="36" y="1" w="21" h="22" draw_type="default" image="tem_ssd"/>
+  <image name="temp_baojing_st" x="15" y="0" w="30" h="24" draw_type="default" image="t_hi" visible="true"/>
+</view>
+```
+
+校验换算：
+
+- `temp_va1` 绝对 x = `53 + 12 = 65`，与分组前一致；
+- 容器右边界 = `53 + 59 = 112`，必须覆盖组内所有子控件的右边界；
+- 容器下边界 = `54 + 26 = 80`，必须覆盖组内所有子控件的下边界。
+- 这组子控件的紧贴包围盒是 `57×24`，但计划书/用户示例给的是 `59×26`（含 2px 内边距）。**保留 `59×26`，不要按公式缩成 `57×24`。**
+
+> 分组不是强制要求。计划书没有表达模块归属、或分组会让坐标换算更容易出错时，保持扁平结构即可；**正确性优先于结构美观**。
+
 ## 6. 设计稿坐标 → AWTK 坐标
 
 ### 6.1 计算缩放
@@ -243,6 +285,7 @@ lcd_h = round(design_h / scale_y)
 ```
 
 - 固定布局保留整数像素；不要保留小数。
+- **坐标只做单位/缩放换算，不做视觉微调。** 计划书给的是 `x=53` 就写 `53`，不要因为预览“看起来偏了”改成 `52`/`54`；有疑问写进同名 `.md` 待确认。
 - 需要百分比时：`pct = lcd_value / lcd_dim * 100`，保留 1 位小数。
 - 1px 线条/边框不要缩放成 0；至少保留 1px。
 - 设计稿是 2x/3x 且切图也是 2x/3x 时，优先按 DPR 资源目录放置切图，不要在 XML 里手工除以 2 后再让图片二次缩放。

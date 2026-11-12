@@ -69,24 +69,28 @@ design/<theme>/images/
 - 同一资源可只提供 `x1`，高密度屏由系统放大；要清晰则提供 `x2/x3`。
 - 指针、表盘、可缩放图标优先 `svg/`。
 
-### 3.2 命名规范
+### 3.2 文件命名约束：禁止改名
 
-生成 XML 前统一重命名切图，规则：
+**原始切图文件名就是 AWTK 资源名，禁止修改。**（约束 2）
 
-| 类型 | 命名 | 示例 |
+- `design/<theme>/images/x1/logo_main.png` → XML 写 `image="logo_main"`。
+- 不得重命名、不得改大小写、不得把空格/连字符/中文替换掉、不得改名后另存。
+- 可以复制到工程的主题目录（`design/day/images/x1`、`design/night/images/x1`），但目标文件名必须与原始文件名完全一致。
+- 白天/夜晚切图原始文件名不同（如 `tem_n_dash.png` / `tem_d_dash.png`）时，各自在对应的 XML 中引用自己的原名，不要统一改成同一个资源名。
+- 原始文件名不符合 AWTK 习惯（含空格、`-`、中文、大写等）时：
+  1. XML 仍然照原名引用；
+  2. 在对应 `.md` 中记录“原始文件名可能影响资源解析，未改名”；
+  3. 是否改名由用户决定，生成器/模型不得擅自处理。
+
+参考命名习惯（**仅用于点评，不是改名依据**）：
+
+| 类型 | 常见写法 | 示例 |
 | --- | --- | --- |
 | 普通图片 | `<模块>_<元素>` | `cluster_bg`、`icon_fuel` |
-| 按钮背景 | `<元素>_<状态>` | `btn_ok_n`、`btn_ok_p`、`btn_ok_d` |
+| 按钮背景 | `<元素>_<状态>` | `btn_ok_n`、`btn_ok_p` |
 | 图标状态 | `<图标>_<状态>` | `turn_left_on`、`abs_off` |
-| 数字位图 | `digit_<字符>` | `digit_0` … `digit_9`、`digit_-`、`digit_.` |
+| 数字位图 | `<前缀><字符>` | `digit_0` … `digit_9` |
 | 序列帧 | `<动画>_<序号>` | `loading_1` … `loading_12` |
-| 指针 | `<表盘>_needle` | `speed_needle`、`rpm_needle` |
-
-约束：
-
-- 只用小写字母、数字、下划线；不要空格、中文、`-`（AWTK 资源名对 `-` 支持不稳定）。
-- 名字全局唯一；同名资源放在不同密度目录下表示同一资源的不同分辨率。
-- 切图不要带设备边框外的透明大边，否则布局会“看起来偏了”。
 
 ### 3.3 切图检查
 
@@ -99,6 +103,8 @@ design/<theme>/images/
 - 数字图等高等宽（同一位数风格一致）。
 
 ## 4. 坐标计划书（Excel）
+
+> **大表先摘要。** 行数 >100 或列数 >20 时，先用 `python scripts/context_digest.py <file.xlsx>` 看规模/列映射/按屏幕统计/异常，再用 `--screen <name> --rows 40` 只取当前屏幕明细。**不要**把 `read_xlsx.py --json -` 的整份输出贴进上下文；小表才直接全量读。摘要只抽取不改写，坐标仍以原始单元格为准。
 
 ### 4.1 常见列
 
@@ -148,6 +154,12 @@ max(y + h) ≈ 设计稿高 or LCD 高
 ### 4.4 读取工具
 
 ```bash
+# 大表：先摘要（推荐）
+python scripts/context_digest.py <file.xlsx>
+python scripts/context_digest.py <file.xlsx> --screen main --rows 40
+python scripts/context_digest.py <file.xlsx> --grep temp
+
+# 小表：直接全量读
 python scripts/read_xlsx.py <file.xlsx> --sheet 0 --json out.json
 python scripts/read_xlsx.py <file.xlsx> --list-sheets
 python scripts/read_xlsx.py <file.xlsx> --csv out.csv
@@ -156,6 +168,7 @@ python scripts/read_xlsx.py <file.xlsx> --csv out.csv
 - 纯标准库实现（xlsx 是 zip + XML），不依赖 openpyxl。
 - 支持共享字符串、内联字符串、合并单元格、日期（原样输出序列号）。
 - 输出 JSON 时保留 `sheet`、`rows`、`merged`、`headers`。
+- `--json -` 输出到 stdout 只适合小表；大表用 `--json out.json` 落盘，再用摘要/过滤读取。
 
 ### 4.5 坐标表 → 控件树
 
@@ -221,11 +234,17 @@ python scripts/read_xlsx.py <file.xlsx> --csv out.csv
 约定：
 
 - 坐标一律是 **LCD 像素**（已换算）；原始设计稿坐标放 `source` 字段备查。
+- **坐标只做单位/缩放换算，不准微调**；计划书原值直接写入 XML。
 - `scale` 是设计稿 → LCD 的缩放比；`dpr` 是资源密度。
 - 每个控件必须有唯一 `name`；纯装饰容器可自动命名 `view_1`。
 - `screen.file` 是**相对 `--out-dir` 的路径**（可含子目录，目录自动创建）；省略时用 `<name>.xml`。
 - `children` 为空表示叶子控件。
 - 未识别的字段原样保留，生成器忽略即可。
+- 双模式：`screen.modes = ["day","night"]`，生成 `_day.xml` / `_night.xml`；节点用 `by_mode` 覆盖按模式不同的字段。只写节点级 `by_mode` 时，生成器也会按 `by_mode` 的键自动识别模式。
+- 缺失切图：节点 `missing: true` + `missing_reason`，生成器跳过；`missing_images` 也可写在顶层。
+- 错误切图/坐标：节点 `review_kind: "wrong_image" | "wrong_coord"` + `review_note`，照常生成并写入同名 `.md`。
+- 同模块分组：用 `type: "view"`，容器矩形优先用计划书给定值（没给才用组内最小外接矩形），子控件写相对容器坐标；绝对位置不变（见 `layout-rules.md` 5.1）。
+- 图片类控件默认写 `draw_type="default"`；`spec_to_ui.py` 会自动补，但手写 XML 必须显式写。特殊控件必须在 `attrs` 中显式写其他值并说明原因。
 
 ## 6. 输入缺失时的处理
 
@@ -233,17 +252,20 @@ python scripts/read_xlsx.py <file.xlsx> --csv out.csv
 | --- | --- |
 | 没有 Excel，只有效果图 | 用像素测量 + 人工识别生成 `design_spec.json`，在交付说明中标注“坐标为估算” |
 | 没有效果图，只有 Excel | 可以生成结构，但颜色/字体用主题默认值，并提示用户预览确认 |
-| 没有切图 | 用占位图/纯色块，`image` 引用保留；在交付说明中列出缺失资源 |
+| 切图缺失 | **不放置该控件**；不要用占位图/纯色块/效果图抠图代替；写入同名 `.md` 的“未放置”表 |
+| 切图疑似错误 | **照计划书放置**（不换图、不猜图）；写入 `.md` 的“已放置但需确认”表 |
+| 坐标疑似错误 | **照计划书原值放置**（不微调）；写入 `.md` 的“已放置但需确认”表 |
+| 白天/黑夜双模式 | 两个 XML（`_day.xml` / `_night.xml`），各自引用原始切图名 |
 | 没有字体 | 用 `default` 字体，提示字号可能偏差 |
 | 分辨率不明 | 从 `project.json` 读取；没有工程时询问用户 |
 | 设计稿尺寸不明 | 用 Excel 最大值推断，或询问用户 |
 
-> 任何“猜”的地方都要在最终交付说明中列出，方便用户核对。
+> 任何“猜”的地方都要在最终交付说明中列出，方便用户核对。缺失/错误项一律进 `.md`，不要悄悄处理。
 
 ## 7. 文件名与编码
 
 - XML 文件 UTF-8 无 BOM。
 - 文件内换行 LF 或 CRLF 均可，但同一工程保持一致。
-- 资源名、控件名、文件名统一小写 + 下划线。
+- **切图资源名保持原始文件名，禁止改名**；控件名/XML 文件名建议小写 + 下划线，但不要为了让名字统一去改切图。
 - 中文文本直接写入 XML（UTF-8）；需要翻译的文本用 `tr_text`，不要硬编码到多语言工程。
 - XML 特殊字符转义：`&` → `&amp;`、`<` → `&lt;`、`>` → `&gt;`、`"` → `&quot;`；复杂文本用 `<property>` + CDATA。

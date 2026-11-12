@@ -13,10 +13,23 @@
     - w="100%"、h="100%" 取父控件尺寸；w="-20" 表示父宽减 20。
     - column/row 自己不会排布子控件，必须写 children_layout。
     - 资源名不要带 x1/ 路径或 .png 扩展名。
+    - 图片控件默认 draw_type="default"；只有特殊控件（整屏背景/九宫格/平铺）才换其他值。
+    - 切图文件名不得修改；XML 的 image 就是原始文件名主干。
+    - 缺失切图不放置；错误切图/坐标照放，并写同名 .md。
+    - 白天/黑夜双模式输出两个 XML；同模块控件可用 view 分组。
 -->
 <window name="main" x="0" y="0" w="800" h="480" style="default">
-  <!-- 背景：整屏铺满。没有背景图时删除本行，用 style 的 bg_color。 -->
+  <!-- 背景：整屏铺满。没有背景图时删除本行，用 style 的 bg_color。
+       draw_type="fill" 属于特殊用途（平铺拉伸），已显式声明。 -->
   <image name="bg" x="0" y="0" w="100%" h="100%" image="bg_main" draw_type="fill"/>
+
+  <!-- 同模块分组：一组切图共用一个 view，子控件用相对容器坐标。
+       分组前后绝对坐标必须一致；不要为了结构好看而随意分组。 -->
+  <view name="temp_group" x="53" y="54" w="59" h="26">
+    <image name="temp_dash" x="0" y="1" w="12" h="19" draw_type="default" image="tem_n_dash"/>
+    <image name="temp_value_1" x="12" y="1" w="12" h="19" draw_type="default" image="tem_n_2"/>
+    <image name="temp_unit" x="36" y="1" w="21" h="22" draw_type="default" image="tem_ssd"/>
+  </view>
 
   <!-- 内容区：vbox，四周 16px 边距，子控件间距 8px。 -->
   <view name="content" x="0" y="0" w="100%" h="100%"

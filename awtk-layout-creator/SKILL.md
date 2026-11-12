@@ -1,6 +1,6 @@
 ---
 name: awtk-layout-creator
-description: 把 UI 效果图、切图资源和坐标计划书（Excel）转换成可运行的 AWTK UI XML 与样式，并用 AWTK 官方 preview_ui 预览、截图、与效果图逐像素比对迭代。适用于 AWTK / AWStudio / AWTK Designer 工程，支持 2W 仪表、中控、HMI、通用窗口。Triggers - AWTK UI, AWTK XML, AWStudio, AWTK Designer, awtk layout, mockup to AWTK, design to XML, coordinate sheet xlsx, 效果图转 AWTK, AWTK 布局, 仪表 UI.
+description: 把 UI 效果图、切图资源和坐标计划书（Excel）转换成可运行的 AWTK UI XML 与样式，并用 AWTK 官方 preview_ui 预览、截图、与效果图逐像素比对迭代。内置五条硬性约束：图片控件默认 draw_type="default"、禁止改切图文件名、缺图不放/错图错坐标照放并写同名 md、白天黑夜双模式输出两个 XML、同模块控件可用 view 分组。内置上下文压缩：大 xlsx/XML/日志/切图目录先用 context_digest.py 抽取摘要，按需懒加载参考文件，用 out/context/capsule.md 在上下文重置后恢复。适用于 AWTK / AWStudio / AWTK Designer 工程，支持 2W 仪表、中控、HMI、通用窗口。Triggers - AWTK UI, AWTK XML, AWStudio, AWTK Designer, awtk layout, mockup to AWTK, design to XML, coordinate sheet xlsx, draw_type, day night theme, 效果图转 AWTK, AWTK 布局, 仪表 UI, 上下文压缩, token 节省, 大 Excel 摘要, 日志摘要, context digest, token budget, lazy load.
 ---
 
 # AWTK 布局生成器
@@ -28,6 +28,37 @@ description: 把 UI 效果图、切图资源和坐标计划书（Excel）转换�
 6. **先看 diff 图，再看指标。** 数值只用于定位，不代替人眼确认布局与信息层级。
 7. **版本要确认。** AWTK 1.7.1 release 2210 **没有** `self_layout="flex(...)"`；不要生成。用 `children_layout` + 普通 `x/y/w/h`。
 
+## 硬性约束（最高优先级，必须逐条遵守）
+
+完整说明与示例见 `references/constraints.md`。与“经验做法”冲突时以本节为准。
+
+1. **`draw_type="default"` 是默认值。** 所有图片类控件（`image`、`image_value`、`image_animation` 等）默认显式写 `draw_type="default"`；只有特殊控件/特殊用途（整屏拉伸、九宫格、平铺等）才允许换其他 `draw_type`，且必须在 `design_spec.json` 里显式写出并说明原因。
+2. **禁止改切图文件名。** 提供的切图文件名就是资源名；不重命名、不改大小写、不替换空格/连字符/中文。可以复制到主题目录，但文件名保持原样。名字不符合 AWTK 习惯时只记录到 `.md`，由用户决定是否改名。
+3. **缺图不放，错图/错坐标照放并写 `.md`。** 切图缺失的控件直接从 XML 中省略，不用占位图/纯色块/抠图代替；切图疑似错误或坐标疑似错误的控件仍按计划书原值放置，并在 XML 旁生成同名 `.md` 标记。**禁止自行曲解计划书、禁止自行微调坐标。**
+4. **白天/黑夜双模式输出两个 XML。** 同一主题、同一界面识别到两种模式时，必须生成 `_day.xml` 和 `_night.xml` 两个文件，不能用一个 XML 代替。
+5. **同模块切图可用 `<view>` 分组。** 只有计划书/切图明确属于同一模块的控件才分组；计划书给了容器矩形就直接用（如用户示例的 `53,54,59,26`），没给才用组内最小外接矩形；子控件坐标换算为相对容器坐标，**分组前后绝对坐标必须完全不变**。容器可以比紧贴子控件的包围盒略大（含内边距），不得为了“最小”去缩小计划书给定的容器。
+
+## Token 与上下文纪律
+
+完整说明见 `references/context-and-tokens.md`（输入大或上下文紧张时再读）。三条规则：
+
+1. **按需加载**：默认只读 `SKILL.md` + `constraints.md`；其他 reference 在需要该能力时读一份，不要预读全部。`references/AWTK开发实践.pdf`（9.4MB）永不整份读。
+2. **先摘要后精读**：大输入先跑 `scripts/context_digest.py`，需要精确值再 `--screen` / `--grep` 取局部。
+3. **压缩只抽取不改写**：摘要只做计数/分组/采样/截断；`name/x/y/w/h/image/style/text` 必须逐字保留，坐标只从原始资料或 `design_spec.json` 取。
+
+触发压缩的阈值：xlsx >100 行或 >20 列、XML >300 控件、切图 >150 文件、日志 >200 行、`design_spec.json` >100 控件。单个屏幕无论大小都用 `--screen` 只取该屏。
+
+| 层级 | 何时加载 |
+| --- | --- |
+| Tier 0（每次） | 本文件 + `references/constraints.md` |
+| Tier 1（按步骤） | 当前步骤相关的一份 reference（写容器→layout-rules；选控件→widget-catalog；写样式→style-rules；归一化→input-formats；预览→preview-and-compare；交付→checklist；大输入→context-and-tokens） |
+| Tier 2（需要骨架） | `assets/*` 模板 |
+| 禁止 | `references/AWTK开发实践.pdf` 整份；`scripts/*.py` 整份（运行，不阅读） |
+
+文件大小与 token 估算不要写死在文档里：`context_digest.py --index` 现场给出。
+
+**上下文胶囊**：大项目在 `out/context/capsule.md` 保存结论（屏幕清单、已确认决策、待确认项、证据路径），不保存坐标表/日志/切图清单。模板 `assets/context_capsule_template.md`。每完成一个屏幕、每次确认或推翻假设、每次上下文可能被压缩前更新。
+
 ## 工作流
 
 ### 0. 识别身份与设计语言
@@ -46,16 +77,30 @@ description: 把 UI 效果图、切图资源和坐标计划书（Excel）转换�
 
 如果用户已经给了工程，先读 `project.json` 推断 LCD、主题、入口，再问缺的项。
 
+### 0.5 盘点输入规模（大项目必做）
+
+```bash
+python <SKILL_DIR>/scripts/context_digest.py --index
+python <SKILL_DIR>/scripts/context_digest.py coords.xlsx --top 8
+python <SKILL_DIR>/scripts/context_digest.py design/default/images --top 8
+```
+
+- 只看规模与异常，不读原始内容。超过阈值的输入后续一律先摘要。
+- 把屏幕清单、模式、切图命名规则写进 `out/context/capsule.md`（模板 `assets/context_capsule_template.md`）。
+- 小项目（单屏、<100 行 xlsx、<150 张切图）可跳过摘要，直接进入下一步。
+
 ### 1. 收集并归一化输入
 
 需要的输入：
 
 - 效果图：PNG/JPG，记录尺寸、内容区原点、缩放比。
 - 切图：`design/<theme>/images/x1`（或 `x2`/`svg`），文件名即资源名。
-- 坐标计划书：`.xlsx`，用 `read_xlsx.py` 读取；没有 Excel 就人工测量。
+- 坐标计划书：`.xlsx`，大表先用 `context_digest.py` 摘要，**逐屏**用 `--screen <name> --rows 40` 取明细；小表才直接 `read_xlsx.py`。没有 Excel 就人工测量。
 - 工程：`project.json`、现有 `design/<theme>/{ui,styles,images,fonts}`。
 
 把结果写成 `design_spec.json`（结构见下）。细节与 Excel 列映射见 `references/input-formats.md`。
+
+**一次只归一化一个屏幕**：读该屏摘要 → 写该屏 `children` → 下一屏。不要把整本 xlsx 展开成 JSON 再贴进上下文，也不要每屏重复读整表。每屏完成后更新胶囊。
 
 ### 2. 生成 `design_spec.json`
 
@@ -83,6 +128,11 @@ description: 把 UI 效果图、切图资源和坐标计划书（Excel）转换�
 - 节点字段：`type, name, x, y, w, h, style, text, children_layout, self_layout, floating, attrs{}, inline_style{}, property{}, children[]`。
 - `layout: "x,y,w,h"` 是简写。
 - 原始设计稿坐标放 `source`，生成器忽略。
+- **双模式**：screen 写 `"modes": ["day", "night"]`，生成器输出 `<stem>_day.xml` / `<stem>_night.xml`；节点用 `by_mode: { "day": {...}, "night": {...} }` 覆盖按模式不同的字段（如 `attrs.image`）。
+- **缺失切图**：节点写 `"missing": true` + `"missing_reason": "..."`，生成器跳过该节点及子树。
+- **错误切图/坐标**：节点写 `"review_kind": "wrong_image" | "wrong_coord"` + `"review_note": "..."`，控件照常生成，并在同名 `.md` 中登记。
+- 屏幕级/规格级说明写 `review_notes`；缺失列表也可写顶层 `missing_images`。
+- `draw_type` 不写时，生成器会给图片类控件自动补 `draw_type="default"`；显式写的特殊值保持原值。
 
 模板：`assets/design_spec_template.json`。
 
@@ -94,9 +144,13 @@ python <SKILL_DIR>/scripts/spec_to_ui.py design_spec.json \
 ```
 
 - 每个 screen 生成一个 XML；`screen.file`（相对 `--out-dir`，省略时用 `<name>.xml`）决定文件名。
+- 名字带 `modes` 时，每个模式生成一个 XML：`main.xml` → `main_day.xml`、`main_night.xml`；也可写 `main_{mode}.xml`。screen 没写 `modes` 但节点用了 `by_mode` 时，生成器会按 `by_mode` 的键自动识别模式，同样输出多个 XML。
+- 有 `missing` / `review_note` / `review_notes` / `missing_images` 时，会在每个 XML 旁生成同名 `.md`（`--no-notes` 可关闭）。**这是硬性要求，不要省略。**
+- 图片类控件未写 `draw_type` 时自动补 `draw_type="default"`；不要手动改成 `scale` 等值，除非确属特殊控件。
+- **坐标原样写入**：生成器不做任何缩放、取整或“视觉微调”。分组只改变坐标参考系，不改变绝对位置。
 - 生成后检查 `x/y/w/h`、`children_layout`、图片/样式引用。
 - 样式**统一追加到** `design/<theme>/styles/default.xml`，用 `style="..."` 引用；AWTK 只自动加载 `styles/default.xml`（窗口专属文件除外），拆成 `button.xml` 等不会生效。模板见 `assets/style_template.xml`。
-- 图片资源只写资源名，不带路径/扩展名。
+- 图片资源只写资源名，不带路径/扩展名；**资源名必须等于原始切图文件名主干，不得改名**。
 
 布局语法、容器语义、控件目录见：
 
@@ -107,13 +161,15 @@ python <SKILL_DIR>/scripts/spec_to_ui.py design_spec.json \
 ### 4. 校验
 
 ```bash
-python <SKILL_DIR>/scripts/validate_ui.py design/default/ui/main.xml \
-    --project <工程> --theme default --lcd 1024x600
+python <SKILL_DIR>/scripts/validate_ui.py design/default/ui/main_day.xml \
+    --project <工程> --theme default --lcd 1024x600 --strict-constraints
 ```
 
-检查：XML 结构、重名、布局语法、`children_layout` 键、`self_layout`、内联样式、图片资源、命名样式、`column/row` 缺布局、超出父边界。
+检查：XML 结构、重名、布局语法、`children_layout` 键、`self_layout`、内联样式、图片资源、命名样式、`column/row` 缺布局、超出父边界、图片控件 `draw_type`。
 
 - `0 errors` 才能进入预览。
+- `--strict-constraints` 把“图片控件缺 `draw_type`”等约束问题升为 error；交付前必须用它跑一遍。
+- 双模式界面要对 `_day.xml` 和 `_night.xml` 各跑一遍；单模式用实际文件名。
 - warnings 要逐条看；`--strict` 可把 warning 当失败。
 - 校验通过不代表渲染正确（主题/字体/图片内容仍可能有问题），必须预览。
 
@@ -140,9 +196,13 @@ AWTK 自带 `preview_ui.exe`，**不需要编译工程**：
 优先用脚本，自动识别构建、选择/生成正确的 `res_root`、等窗口、截图、结束进程：
 
 ```bash
+# 双模式界面：两个 XML 分别预览、分别截图
 python <SKILL_DIR>/scripts/preview_ui.py --project <工程> \
-    --ui design/default/ui/main.xml --lcd 1024x600 \
-    --screenshot out/preview.png --wait 2 --json
+    --ui design/default/ui/main_day.xml --lcd 1024x600 \
+    --screenshot out/preview_day.png --wait 2 --json
+python <SKILL_DIR>/scripts/preview_ui.py --project <工程> \
+    --ui design/default/ui/main_night.xml --lcd 1024x600 \
+    --screenshot out/preview_night.png --wait 2 --json
 ```
 
 - `--dry-run` 先看命令；结果里的 `preview_cli` 和 `res_layout` 说明用了哪套参数、哪种资源根。
@@ -175,22 +235,32 @@ python <SKILL_DIR>/scripts/compare_images.py design/mockup.png out/preview.png \
 
 ### 7. 交付
 
-- UI：`design/<theme>/ui/*.xml`
+- UI：`design/<theme>/ui/*.xml`（双模式界面必须同时交付 `*_day.xml` 与 `*_night.xml`）
+- 标注：每个有缺失/待确认项的 XML 旁的同名 `.md`（`main_day.md` 等）
 - 样式：`design/<theme>/styles/default.xml`（窗口级皮肤才用 `<窗口名>.xml`）
 - 规格：`design_spec.json`
 - 证据：`out/preview.png`、`out/compare/{diff,side_by_side,metrics.json}`
-- 说明：LCD、主题、字体、缺失资源、估算坐标、已知差异、复现命令。
+- 说明：LCD、主题、字体、未改名切图的原始文件名、缺失资源、错误切图/坐标的待确认项、已知差异、复现命令。
 
-交付前过一遍 `references/checklist.md`。
+交付前过一遍 `references/constraints.md` 的五条自检和 `references/checklist.md`。
 
 ## 快速命令索引
 
 | 任务 | 命令 |
 | --- | --- |
-| 读 Excel | `python scripts/read_xlsx.py coords.xlsx --json coords.json` |
+| 看 skill 文件规模/加载建议 | `python scripts/context_digest.py --index` |
+| 大 Excel 摘要 | `python scripts/context_digest.py coords.xlsx --top 12` |
+| 单屏明细 | `python scripts/context_digest.py coords.xlsx --screen main --rows 40` |
+| 按关键字定位控件 | `python scripts/context_digest.py coords.xlsx --grep temp` |
+| XML 体检 | `python scripts/context_digest.py design/default/ui/main_day.xml` |
+| spec 摘要 + 胶囊草稿 | `python scripts/context_digest.py design_spec.json --out out/context/capsule.md` |
+| 日志摘要 | `python scripts/context_digest.py build.log --budget 3000` |
+| 切图目录摘要 | `python scripts/context_digest.py design/default/images --top 12` |
+| 读 Excel（小表） | `python scripts/read_xlsx.py coords.xlsx --json coords.json` |
 | 读多个 sheet | `python scripts/read_xlsx.py coords.xlsx --list-sheets` |
 | 生成 XML | `python scripts/spec_to_ui.py design_spec.json --out-dir design/default/ui` |
-| 校验 | `python scripts/validate_ui.py design/default/ui/main.xml --project .` |
+| 生成双模式 XML | `python scripts/spec_to_ui.py design_spec.json --out-dir design/default/ui --modes day,night` |
+| 校验 | `python scripts/validate_ui.py design/default/ui/main_day.xml --project . --strict-constraints` |
 | 预览+截图 | `python scripts/preview_ui.py --project . --ui design/default/ui/main.xml --screenshot out/preview.png` |
 | 比对 | `python scripts/compare_images.py mockup.png out/preview.png --out-dir out/compare` |
 
@@ -210,11 +280,22 @@ python <SKILL_DIR>/scripts/compare_images.py design/mockup.png out/preview.png \
 10. **`#RRGGBBAA`**：alpha 在最后两位，不是 CSS 的 `#AARRGGBB`。
 11. **`y="top:0"` / `x="left:0"`**：AWTK 没有这两个关键字，会被 `atof` 解析成 0；直接写 `0`。
 12. **`flex(...)` 不存在于 1.7.1**：确认 SDK 版本；1.7.1 release 2210 不支持。
+13. **图片控件漏写 `draw_type`**：违反约束 1。生成器会自动补 `default`；手写 XML 要用 `--strict-constraints` 校验。
+14. **改了切图文件名**：违反约束 2。XML 的 `image` 必须等于原始文件名主干；名字不规范只记录、不改名。
+15. **缺图用了占位图/抠图**：违反约束 3。缺图控件必须省略，并在 `.md` 中列出；错图/错坐标才照放并标记。
+16. **白天/黑夜只写一个 XML**：违反约束 4。双模式必须输出 `_day.xml` 与 `_night.xml` 两个文件。
+17. **为了“对齐”微调坐标**：违反约束 3。坐标必须用计划书原值；`view` 分组只做坐标系换算，绝对位置不变。
+18. **把整本 xlsx / 整份 XML / 整个切图目录倾倒进上下文**：token 爆炸且淹没关键信息。先 `context_digest.py`，再 `--screen` / `--grep` 取局部。
+19. **用模型“总结”坐标或资源名**：会漂移。摘要只抽取，`x/y/w/h/image/name` 必须逐字来自原始资料或 `design_spec.json`。
+20. **一次性预读所有 reference / 整份 PDF**：`AWTK开发实践.pdf` 只按页/关键词读；reference 只读当前步骤需要的一份。
+21. **上下文重置后重新读全部原始资料**：先读 `out/context/capsule.md`，再 `context_digest.py design_spec.json`，最后只取当前屏幕。
 
 ## 参考与资源
 
 | 文件 | 内容 |
 | --- | --- |
+| `references/constraints.md` | **五条硬性约束**：draw_type、切图改名、缺图/错图、双模式、view 分组 |
+| `references/context-and-tokens.md` | **Token 与上下文压缩**：懒加载、摘要阈值、胶囊、逐屏循环、重置恢复 |
 | `references/layout-rules.md` | 布局规则、坐标语义、children_layout、self_layout |
 | `references/widget-catalog.md` | 控件目录、属性、设计元素 → 控件 |
 | `references/style-rules.md` | 样式文件结构、状态、颜色、图片绘制类型 |
@@ -228,11 +309,18 @@ python <SKILL_DIR>/scripts/compare_images.py design/mockup.png out/preview.png \
 | `assets/awtk_2w_cluster_template.xml` | 2W 仪表骨架（gauge/image_value/progress_circle） |
 | `assets/awtk_2w_cluster_realworld.xml` | 真实 2W 项目导出样例（含旧式 `style:normal:bg.color` 写法，仅参考） |
 | `assets/design_spec_template.json` | `design_spec.json` 模板 |
+| `assets/context_capsule_template.md` | 上下文胶囊模板（`out/context/capsule.md`） |
 
 ## 完成标准
 
-- `validate_ui.py` 0 errors。
+- `validate_ui.py --strict-constraints` 0 errors。
+- 所有图片控件都有 `draw_type`，默认值为 `default`；非默认值有记录。
+- 没有切图被改名；XML 资源名 = 原始文件名主干。
+- 缺失切图未出现在 XML 中；错误切图/错误坐标已写入同名 `.md`。
+- 双模式界面已输出两个 XML（`_day.xml` / `_night.xml`）。
 - `preview_ui` 窗口尺寸等于 LCD 尺寸，截图无白屏。
 - 主要区域的位置、尺寸、颜色、文字与效果图一致；缺失资源已在说明中列出。
 - `side_by_side.png` 已生成并人工看过；`metrics.json` 已记录。
 - 用户能按交付说明中的命令自行复现预览。
+- 大输入（超阈值）已用 `context_digest.py` 摘要后再归一化；上下文里没有整本 xlsx/整份日志/整份 PDF。
+- `out/context/capsule.md` 已更新（屏幕状态、已确认决策、待确认项、下一步），可用于上下文重置后继续。

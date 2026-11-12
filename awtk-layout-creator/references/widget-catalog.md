@@ -127,27 +127,31 @@
 
 ### 3.1 image 与 draw_type
 
+**默认所有图片控件写 `draw_type="default"`**（约束 1）；特殊控件才换其他值。
+
 ```xml
 <image x="20" y="20" w="100" h="100" image="logo" draw_type="default"/>
 ```
 
 `draw_type` 常用值（来自 `src/base/bitmap.h`）：
 
-| 值 | 行为 |
-| --- | --- |
-| `default` | 原图大小，不缩放 |
-| `center` | 居中，不缩放 |
-| `icon` | 居中，按控件大小缩放（保持比例） |
-| `scale` | 拉伸填满控件 |
-| `scale_auto` | 按比例缩放并填满 |
-| `scale_down` | 只缩小不放大 |
-| `scale_w` / `scale_h` | 按宽/高缩放 |
-| `fill` | 平铺填满 |
-| `repeat` / `repeat_x` / `repeat_y` | 重复平铺 |
-| `patch9` | 九宫格拉伸（按钮背景常用） |
-| `patch3_x` / `patch3_y` | 三宫格拉伸 |
+| 值 | 行为 | 使用要求 |
+| --- | --- | --- |
+| `default` | 原图大小，不缩放 | **默认必须写** |
+| `center` | 居中，不缩放 | 仅特殊用途 |
+| `icon` | 居中，按控件大小缩放（保持比例） | 仅特殊用途 |
+| `scale` | 拉伸填满控件 | 仅特殊用途（如整屏背景） |
+| `scale_auto` | 按比例缩放并填满 | 仅特殊用途 |
+| `scale_down` | 只缩小不放大 | 仅特殊用途 |
+| `scale_w` / `scale_h` | 按宽/高缩放 | 仅特殊用途 |
+| `fill` | 平铺填满 | 仅特殊用途 |
+| `repeat` / `repeat_x` / `repeat_y` | 重复平铺 | 仅特殊用途 |
+| `patch9` | 九宫格拉伸（按钮背景常用） | 仅特殊用途 |
+| `patch3_x` / `patch3_y` | 三宫格拉伸 | 仅特殊用途 |
 
 - XML 中 `image="earth"` 不带目录和扩展名；实际资源在 `design/<theme>/images/x1/earth.png` 等密度目录。
+- **资源名 = 原始切图文件名主干**；禁止重命名（约束 2）。
+- `spec_to_ui.py` 会自动补 `draw_type="default"`；`validate_ui.py --strict-constraints` 会检查。
 - 需要旋转的图（指针、表盘）优先用 SVG，避免位图旋转锯齿。
 - `rotation` 单位是**弧度**，不是角度；XML 里一般不用它，仪表用 `gauge_pointer`。
 
@@ -156,7 +160,7 @@
 ```xml
 <image_animation name="loading" x="c" y="m" w="64" h="64"
                  image="loading_" start_index="1" end_index="12"
-                 interval="80" auto_play="true" loop="true"/>
+                 interval="80" auto_play="true" loop="true" draw_type="default"/>
 ```
 
 - 资源命名：`loading_1`、`loading_2` …… `loading_12`。
@@ -168,7 +172,7 @@
 
 ```xml
 <image_value name="speed" x="c" y="bottom:40" w="180" h="56"
-             image="num_" format="%03d" value="0"/>
+             image="num_" format="%03d" value="0" draw_type="default"/>
 ```
 
 - `image` 是前缀，不是单张图；数字 3 会找 `num_3`。
@@ -259,7 +263,7 @@
   </gauge>
   <!-- 中间数字车速 -->
   <image_value name="speed_digit" x="c" y="220" w="160" h="56"
-               image="digit_" format="%03d" value="0"/>
+               image="digit_" format="%03d" value="0" draw_type="default"/>
   <!-- 底部圆弧油量/电量 -->
   <progress_circle name="fuel" x="c" y="bottom:30" w="120" h="120"
                    max="100" value="60" start_angle="135" line_width="8"/>
@@ -274,8 +278,8 @@
 ### 4.3 指示灯 / 状态图标
 
 ```xml
-<image name="turn_left" x="60" y="40" w="32" h="32" image="turn_left_off"/>
-<image name="abs" x="100" y="40" w="32" h="32" image="abs_on"/>
+<image name="turn_left" x="60" y="40" w="32" h="32" image="turn_left_off" draw_type="default"/>
+<image name="abs" x="100" y="40" w="32" h="32" image="abs_on" draw_type="default"/>
 ```
 
 - 多状态图标建议每种状态一张图，代码切换 `image`；或用 `image_value` 的数值映射。

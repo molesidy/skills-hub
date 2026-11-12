@@ -194,14 +194,15 @@ python scripts/preview_ui.py --project D:/proj --ui design/default/ui/main.xml \
 ## 3. 预览前校验
 
 ```bash
-python scripts/validate_ui.py design/default/ui/main.xml --project D:/proj
+python scripts/validate_ui.py design/default/ui/main_day.xml --project D:/proj --strict-constraints
 ```
 
 检查项：
 
 - XML 是否 well-formed。
 - 控件 `name` 是否唯一。
-- `image` 引用的资源是否存在于 `design/<theme>/images/**`。
+- 图片类控件是否写了 `draw_type`（`--strict-constraints` 下缺 `draw_type` 为 error）。
+- `image` 引用的资源是否存在于 `design/<theme>/images/**`，且资源名等于原始文件名主干。
 - `style="..."` 引用的命名样式是否在 AWTK 实际加载的样式文件中定义（`styles/default.xml`；窗口专属 `<name>.xml` 除外）。
 - `styles/` 下不会被加载的拆分文件会给出 warning。
 - `x/y/w/h` 是否可解析（数字、百分比、`c/r/b/m`、`r:20`、`b:20`）。
@@ -309,6 +310,17 @@ python scripts/compare_images.py design/mockup.png out/preview.png \
 | 控制台无输出 | 位置参数版会自己开控制台；看任务栏里标题为 exe 路径的窗口 |
 | 截图黑屏 | 新构建可换 `render_mode=Software`；旧构建只能手动截图 |
 | 中文乱码 | XML 是否 UTF-8；字体是否含中文字形 |
+
+### 6.1 大日志先摘要
+
+预览/构建日志超过 200 行时，不要整份读：
+
+```bash
+python scripts/context_digest.py build.log --budget 3000
+python scripts/context_digest.py build.log --grep error
+```
+
+摘要会归一化时间戳/路径/数字，按模式去重，统计 error/warning 行数，只保留首尾样本。定位到具体条目后再读原始日志的对应行。
 
 ## 7. 退出与清理
 

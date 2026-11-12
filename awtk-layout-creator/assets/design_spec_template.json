@@ -1,5 +1,12 @@
 {
-  "_comment": "design_spec.json - 设计规格单一事实来源。坐标全部是 LCD 像素（已换算）。用 scripts/spec_to_ui.py 生成 XML。",
+  "_comment": "design_spec.json - 设计规格单一事实来源。坐标全部是 LCD 像素（已换算）。用 scripts/spec_to_ui.py 生成 XML。硬性约束见 references/constraints.md。",
+  "_constraints": {
+    "draw_type": "所有图片控件默认 draw_type=\"default\"；特殊控件显式写其他值",
+    "slice_names": "禁止修改原始切图文件名；XML image 使用原始文件名主干",
+    "missing_or_wrong": "缺失切图省略；错误切图/坐标照放，并在 XML 旁写同名 .md",
+    "day_night": "同一主题同一界面有白天/黑夜时输出两个 XML（_day.xml / _night.xml）",
+    "grouping": "同模块切图可用 <view> 分组；分组前后绝对坐标不变"
+  },
   "project": {
     "name": "demo",
     "lcd": { "w": 800, "h": 480 },
@@ -24,11 +31,18 @@
     "default": { "name": "default", "size": 18 },
     "title": { "name": "default", "size": 24 }
   },
+  "missing_images": [
+    { "name": "icon_absent", "widget": "icon_absent", "reason": "切图包中没有该文件，按约束不放置" }
+  ],
+  "review_notes": [
+    "计划书没有给出本界面的字体文件，暂用 default 字体"
+  ],
   "screens": [
     {
       "name": "main",
       "type": "window",
       "file": "main.xml",
+      "modes": ["day", "night"],
       "x": 0,
       "y": 0,
       "w": 800,
@@ -42,7 +56,8 @@
           "y": 0,
           "w": "100%",
           "h": "100%",
-          "attrs": { "image": "bg_main", "draw_type": "fill" }
+          "attrs": { "image": "bg_main", "draw_type": "scale" },
+          "comment": "特殊控件：整屏背景需要拉伸，显式使用 scale"
         },
         {
           "name": "title",
@@ -54,6 +69,74 @@
           "text": "Vehicle Status",
           "style": "title",
           "source": { "design_rect": [48, 32, 600, 64] }
+        },
+        {
+          "name": "temp_group",
+          "type": "view",
+          "x": 53,
+          "y": 54,
+          "w": 59,
+          "h": 26,
+          "comment": "同一模块：温度切图分组；容器 59x26 来自计划书/用户示例（比紧贴包围盒 57x24 多 2px 内边距），不要按公式缩小；子控件坐标已换算为相对容器坐标，绝对位置不变",
+          "children": [
+            {
+              "name": "temp_dash",
+              "type": "image",
+              "x": 0,
+              "y": 1,
+              "w": 12,
+              "h": 19,
+              "by_mode": {
+                "day": { "attrs": { "image": "tem_n_dash" } },
+                "night": { "attrs": { "image": "tem_d_dash" } }
+              }
+            },
+            {
+              "name": "temp_value_1",
+              "type": "image",
+              "x": 12,
+              "y": 1,
+              "w": 12,
+              "h": 19,
+              "by_mode": {
+                "day": { "attrs": { "image": "tem_n_2" } },
+                "night": { "attrs": { "image": "tem_d_2" } }
+              }
+            },
+            {
+              "name": "temp_unit",
+              "type": "image",
+              "x": 36,
+              "y": 1,
+              "w": 21,
+              "h": 22,
+              "by_mode": {
+                "day": { "attrs": { "image": "tem_n_ssd" } },
+                "night": { "attrs": { "image": "tem_d_ssd" } }
+              }
+            }
+          ]
+        },
+        {
+          "name": "ind_abs",
+          "type": "image",
+          "x": 450,
+          "y": 15,
+          "w": 52,
+          "h": 40,
+          "attrs": { "image": "ind_abs" },
+          "review_kind": "wrong_image",
+          "review_note": "切图与效果图不一致，已按计划书坐标原值放置，待确认"
+        },
+        {
+          "name": "icon_absent",
+          "type": "image",
+          "x": 0,
+          "y": 0,
+          "w": 32,
+          "h": 32,
+          "missing": true,
+          "missing_reason": "切图缺失，按约束不放置"
         },
         {
           "name": "actions",
